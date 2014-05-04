@@ -77,10 +77,10 @@ and then copies standard input from the safe_sqlplus process to the standard inp
 ### Examples
 
 Connect to container
-    ./safe_sqlplus -H oradb01.initech.com -P 1521 -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o /apps/oracle/12c -c SID=oradb01
+    /usr/local/bin/safe_sqlplus -H oradb01.initech.com -P 1521 -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o /apps/oracle/12c -c SID=oradb01
 
 Connect to pluggable database
-    ./safe_sqlplus -H oradb01.initech.com -P 1521 -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o /apps/oracle/12c -c SERVICE_NAME=pluggable1.initech.com
+    /usr/local/bin/safe_sqlplus -H oradb01.initech.com -P 1521 -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o /apps/oracle/12c -c SERVICE_NAME=pluggable1.initech.com
 
 
 -Ryan A. Chapman
