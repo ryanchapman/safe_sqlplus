@@ -43,4 +43,12 @@ sqlplus: safe_sqlplus.o options.o
 clean:
 	rm -f safe_sqlplus *.o
 
+build_failed:
+	echo "TRAVIS_TEST_RESULT=$$TRAVIS_TEST_RESULT"
+	echo "Build failed."
+	echo "CWD:"
+	pwd | sed 's/^/  /g'
+	echo "Environment:"
+	set | sed 's/^/  /g'
 
+test:
