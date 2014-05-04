@@ -67,6 +67,7 @@ void usage(char *argv0) {
     printf(" -d,--debug             Print debug messages\n");
     printf(" -h,--help              This help message\n");
     printf(" -P,--port              Oracle database host port to connect to (default=1521)\n");
+    printf("Report bugs to <ryan@rchapman.org>\n");
 }
 
 void parse_args(int argc, char *argv[]) {
