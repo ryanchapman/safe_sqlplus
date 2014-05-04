@@ -39,7 +39,7 @@ safe_sqlplus will set up a pipe(2) and then fork and execute /usr/local/bin/get_
     #!/bin/bash -
 
     # Get Oracle database password from remote server
-    echo $(curl -q http://rpc01.initech.com/api/getdbuser?token=adc83b19e793491b1c6ea0fd8b46cd9f32e592fc)
+    echo $(curl -qs http://rpc01.initech.com/api/getdbuser?token=adc83b19e793491b1c6ea0fd8b46cd9f32e592fc)
 
 safe_sqlplus then forks and executes /usr/local/bin/get_ora_password to get the Oracle database password.
 
