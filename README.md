@@ -69,7 +69,7 @@ and then copies standard input from the safe_sqlplus process to the standard inp
     +-------------+     |     safe_sqlplus  |          |      sqlplus      |         |
            |            |_______    ________|          |_______    ________|         |
            |            | fd 0  |  |   fd 1 |          | fd 0  |  |   fd 1 |         |
-           +----------->| stdin |  | stdout |-->------>| stdin |  | stdout |-->------+
+           +----------->| stdin |  | stdout |---pipe-->| stdin |  | stdout |-->------+
                         +-------------------+          +-------------------+
     
     
