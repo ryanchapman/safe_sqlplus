@@ -37,6 +37,8 @@ DEPS=safe_sqlplus.h
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+all: sqlplus
+
 sqlplus: safe_sqlplus.o options.o
 	$(CC) -o safe_sqlplus safe_sqlplus.o options.o $(LDFLAGS)
 

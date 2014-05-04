@@ -1,7 +1,7 @@
 language: c
 
 before_install:
- - "cd $TRAVIS_BUILD_DIR && make$TRAVIS_BUILD_DIR"
+ - "cd $TRAVIS_BUILD_DIR && make clean && make all"
 
 script:
  - make test
