@@ -73,6 +73,29 @@ and then copies standard input from the safe_sqlplus process to the standard inp
                         +-------------------+          +-------------------+
     
     
+### Usage
+
+    $ ./safe_sqlplus -h
+    usage: ./safe_sqlplus -H hostname -P port -o oraclehome -c connectdata -u usernameprogram -p pwprogram
+    Mandatory:
+     -c,--connectdata       Connect data, passed to connect command for login in sqlplus
+                            examples: -c SERVICE_NAME=pluggable1
+                                      -c SID=oraclehost1
+     -H,--host              Oracle database host to connect to
+     -o,--oraclehome        Path to Oracle home (same as ORACLE_HOME environment variable)
+                            This program will execute ORACLE_HOME/bin/sqlplus
+     -p,--passwordprogram   Path and arguments to program that will return Oracle database password
+     -u,--usernameprogram   Path and arguments to program that will return Oracle database username
+                            NOTE: username and password programs are passed to execv(), so
+                                  things like pipes, single and double quotes as not supported.
+                                  Just provide a single script or program that will return the uname/password
+                                  example: -p /usr/local/bin/get_oracle_password
+                                  /usr/local/bin/get_oracle_password should only print the password on stdout
+    Optional:
+     -d,--debug             Print debug messages
+     -h,--help              This help message
+     -P,--port              Oracle database host port to connect to (default=1521)
+
 
 ### Examples
 
