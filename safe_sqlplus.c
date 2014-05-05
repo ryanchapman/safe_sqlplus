@@ -51,6 +51,7 @@ void sighandle_sigchld(int signo) {
     pid_t pid;
 
     while(1) {
+        status=0;
         pid=wait3(&status, WNOHANG, (struct rusage *)NULL);
         if(pid == 0) {
             return;
@@ -58,8 +59,9 @@ void sighandle_sigchld(int signo) {
             return;
         } else {
             // if child dies with non-zero result, parent should die immediately.
-            if(WEXITSTATUS(status) != 0)
+            if(WIFEXITED(status) && WEXITSTATUS(status) != 0) {
                 exit(WEXITSTATUS(status));
+            }
         }
     }
 }
@@ -173,6 +175,8 @@ char *const *make_args(char *argstr) {
 //    char *basename;
     char **args;
     char *p;
+    if(debug)
+        fprintf(stderr, "ENTER make_args(argstr=\"%s\")\n", argstr);
     if(*argstr == '\0') {
         return NULL;    // impossible to make args
     }
@@ -221,7 +225,6 @@ char *const *make_args(char *argstr) {
             fprintf(stderr, "Could not cut field %d from string \"%s\"\n", i, argstr);
             exit(1);
         }
-        fprintf(stderr, "arg=%s\n", arg);
         *(args+i)=arg;
     }
     *(args+num_args)=NULL;
@@ -231,6 +234,90 @@ char *const *make_args(char *argstr) {
         fflush(stderr);
     }
     return args;
+}
+
+int realloc_if_needed(char *s, int capacity) {
+    int current_len, new_capacity;
+    new_capacity=capacity;
+    current_len=strlen(s);
+    if((current_len-1) >= capacity) {
+        new_capacity=capacity*2;
+        if((s=realloc(s, new_capacity)) == NULL) {
+            print_stacktrace();
+            fprintf(stderr, "Could not realloc(s=0x%p, %d). Old capacity was %d.\n", (void *)s, new_capacity, capacity);
+            PERROR("realloc()");
+        }
+    }
+    return new_capacity;
+}
+
+char *make_connect_str(char *template, char *username, char *password) {
+    char *pt, *pcs, *pu, *pp; // ptrs to template, connect string, username, password
+    char *cs;   //connect string
+    int capacity, i, j;
+
+    // guess how much room we'll need
+    capacity=(strlen(template)+strlen(username)+strlen(password))*sizeof(char);
+    if((cs=malloc(capacity)) == NULL) {
+        perror("malloc()");
+    }
+    memset(cs, 0, capacity);
+    pt=template;
+    pcs=cs;
+    for(i=0; *pt != '\0'; ) {
+        //printf("                *pt=%c\n", *pt);
+        capacity=realloc_if_needed(cs, capacity);
+        if(*pt                          == '{' && 
+           *(pt+1)  != '\0' && *(pt+1)  == '{' && 
+           *(pt+2)  != '\0' && *(pt+2)  == 'u' && 
+           *(pt+3)  != '\0' && *(pt+3)  == 's' &&
+           *(pt+4)  != '\0' && *(pt+4)  == 'e' &&
+           *(pt+5)  != '\0' && *(pt+5)  == 'r' &&
+           *(pt+6)  != '\0' && *(pt+6)  == 'n' &&
+           *(pt+7)  != '\0' && *(pt+7)  == 'a' &&
+           *(pt+8)  != '\0' && *(pt+8)  == 'm' &&
+           *(pt+9)  != '\0' && *(pt+9)  == 'e' &&
+           *(pt+10) != '\0' && *(pt+10) == '}' &&
+           *(pt+11) != '\0' && *(pt+11) == '}') {
+            // we've reached {{username}} variable in template. substitute
+            //printf("Found {{username}} variable at index %d\n", i);
+            pu=username;
+            for(j=0; *pu != '\0'; j++) {
+                capacity=realloc_if_needed(cs, capacity);
+                *pcs++ = *pu++;  // copy username to connect string char by char
+            }
+            i+=j;    // record each char written to connect string
+            pt+=12;  // skip past "{{username}}" in template
+        } else if(*pt                          == '{' &&
+                  *(pt+1)  != '\0' && *(pt+1)  == '{' &&
+                  *(pt+2)  != '\0' && *(pt+2)  == 'p' && 
+                  *(pt+3)  != '\0' && *(pt+3)  == 'a' && 
+                  *(pt+4)  != '\0' && *(pt+4)  == 's' && 
+                  *(pt+5)  != '\0' && *(pt+5)  == 's' && 
+                  *(pt+6)  != '\0' && *(pt+6)  == 'w' && 
+                  *(pt+7)  != '\0' && *(pt+7)  == 'o' && 
+                  *(pt+8)  != '\0' && *(pt+8)  == 'r' && 
+                  *(pt+9)  != '\0' && *(pt+9)  == 'd' && 
+                  *(pt+10) != '\0' && *(pt+10) == '}' && 
+                  *(pt+11) != '\0' && *(pt+11) == '}') {
+            // we've reached {{password}} variable in template. substitute
+            //printf("Found {{password}} variable at index %d\n", i);
+            pp=password;
+            for(j=0; *pp != '\0'; j++) {
+                capacity=realloc_if_needed(cs, capacity);
+                *pcs++ = *pp++;  // copy password to connect string char by char
+            }
+            i+=j;    // record each char written to connect string
+            pt+=12;  // skip past "{{password}}" in template
+        } else {
+            // not a variable. just copy the char from the template to the connect string
+            //printf("t[%d]='%c'\n", i, *pt);
+            *pcs++ = *pt++;
+            i++;
+        }
+    }
+    *pcs='\0';
+    return cs;
 }
 
 int main(int argc, char *argv[]) {
@@ -245,12 +332,12 @@ int main(int argc, char *argv[]) {
     char *const *pw_args;
     char sqlplus_program[SQLPLUS_MAX];
     char *const *sqlplus_args;
-    char connect_str[CONNECT_MAX];
+    char *connect_str;
 
     if(signal(SIGCHLD, sighandle_sigchld) == SIG_ERR ||
        signal(SIGSEGV, sighandle_sigsegv) == SIG_ERR ||
-       signal(SIGFPE,  sighandle_sigfpe)  == SIG_ERR ||
-       signal(SIGILL,  sighandle_sigill)  == SIG_ERR) {
+       signal(SIGFPE , sighandle_sigfpe ) == SIG_ERR ||
+       signal(SIGILL , sighandle_sigill ) == SIG_ERR) {
         perror("could not set up signal handler");
         exit(1);
     }
@@ -280,16 +367,22 @@ int main(int argc, char *argv[]) {
         close(fds[1]);  // write side of pipe
         if(read(fds[0], ora_username, USERNAME_MAX) <= 0) {
             print_stacktrace();
-            fprintf(stderr, "Could not get Oracle sqlplus username");
+            fprintf(stderr, "Could not get Oracle username");
             return 1;
         }
         if(ora_username[strlen(ora_username)-1] == '\n') {
             ora_username[strlen(ora_username)-1]='\0';
         }
-        fprintf(stderr, "Got oracle username=\"%s\"\n", ora_username);
+        if(debug)
+            fprintf(stderr, "Got oracle username=\"%s\"\n", ora_username);
+        // process should be gone, but if not, wait for temination and report errors if there were any
+        status=0;
         waitpid(username_pid, &status, 0);
-        if(WEXITSTATUS(status) != 0)
+        if(WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+            fprintf(stderr, "Failed to execute username program (it returned %d)\n", WEXITSTATUS(status));
+            fflush(stderr);
             exit(WEXITSTATUS(status));
+        }
         // continue on to get Oracle sqlplus password
     } else {
         // child
@@ -335,31 +428,29 @@ int main(int argc, char *argv[]) {
         close(fds[1]);  // write side of pipe
         if(read(fds[0], ora_pw, PW_MAX) <= 0) {
             print_stacktrace();
-            fprintf(stderr, "Could not get Oracle sqlplus password");
+            fprintf(stderr, "Could not get Oracle password");
             return 1;
         }
         if(ora_pw[strlen(ora_pw)-1] == '\n') {
             ora_pw[strlen(ora_pw)-1]='\0';
         }
-        fprintf(stderr, "Got oracle password=\"%s\"\n", ora_pw);
-        waitpid(pw_pid, 0, 0);
-        if(WEXITSTATUS(status) != 0)
+        if(debug)
+            fprintf(stderr, "Got oracle password=\"%s\"\n", ora_pw);
+        // process should be gone, but if not, wait for temination and report errors if there were any
+        status=0;
+        waitpid(pw_pid, &status, 0);
+        if(WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+            fprintf(stderr, "Failed to execute password program (it returned %d)\n", WEXITSTATUS(status));
+            fflush(stderr);
             exit(WEXITSTATUS(status));
+        }
         // continue on to run sqlplus
     } else {
         // child
         close(fds[0]);  // read side of pipe
         dup2(fds[1], fileno(stdout));  // wire up stdout (fd1) to write side of the pipe (fds[1])
-        if(debug) {
-            fprintf(stderr, "Exec password program: %s", pw_args[0]);
-            char **p;
-            p=(char **)pw_args;
-            while(*p != NULL) {
-                fprintf(stderr, " %s", *p);
-                p++;
-            }
-            fprintf(stderr, "\n");
-        }
+        if(debug)
+            fprintf(stderr, "Exec password program: \"%s\"\n", pw_args[0]);
         if(execv(pw_args[0], pw_args) == -1) {
             snprintf(logbuf, sizeof(logbuf), "Unable to execute \"%s\"", pw_args[0]);
             perror(logbuf);
@@ -389,25 +480,42 @@ int main(int argc, char *argv[]) {
         close(fds[0]);                // close read side of pipe
         dup2(fds[1], fileno(stdout)); // wire up stdout (fd 1) to write side of the pipe (fds[1])
         close(fds[1]);
-        char *define_off_str="set define off;\n";
-        // TODO: for debugging login failures: char *define_off_str="set define off;\nspool /tmp/spool.log;\n";
-        char *define_on_str="set define on;\n";
-        memset(connect_str, 0, CONNECT_MAX);
-        snprintf(connect_str, 
-                 CONNECT_MAX,
-                 "connect system/\"%s\"@\"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=%s)(PORT=%s))(CONNECT_DATA=(%s)))\"\n", ora_pw, host, port, connect_data);
-        connect_str[CONNECT_MAX-1]='\0';
-        if(debug)
-            fprintf(stderr, "Sending to sqlplus: \"%s\"\n", connect_str);
-        write(fileno(stdout), define_off_str, strlen(define_off_str));
+        char *spool_begin="spool ";
+        char *spool_session_log=SQLPLUS_SESSION_LOG;
+        char *spool_end=";\n";
+        char *define_off="set define off;\n";
+        char *connect_start="connect ";
+        char *connect_end="\n";
+        char *define_on="set define on;\n";
+        connect_str=make_connect_str(connect_template, ora_username, ora_pw);
+        if(debug) {
+            fprintf(stderr, "Logging sqlplus session to: %s\n", SQLPLUS_SESSION_LOG);
+            write(fileno(stdout), spool_begin, strlen(spool_begin));
+            write(fileno(stdout), spool_session_log, strlen(spool_session_log));
+            write(fileno(stdout), spool_end, strlen(spool_end));
+            fprintf(stderr, "Sending to sqlplus (without the brackets): [connect %s]\n", connect_str);
+        }
+        write(fileno(stdout), define_off, strlen(define_off));
+        write(fileno(stdout), connect_start, strlen(connect_start));
         write(fileno(stdout), connect_str, strlen(connect_str));
-        write(fileno(stdout), define_on_str, strlen(define_on_str));
+        write(fileno(stdout), connect_end, strlen(connect_end));
+        write(fileno(stdout), define_on, strlen(define_on));
         fflush(stdout);
         // copy stdin to the write side of pipe (this read(2) will block)
         while((count=read(fileno(stdin), buf, BUF_MAX)) > 0) {
             write(fileno(stdout), buf, count);
         }
-        waitpid(sqlplus_pid, &status, 0);
+        status=0;
+        if(waitpid(sqlplus_pid, &status, 0) == -1) {
+            print_stacktrace();
+            fprintf(stderr, "Failed to wait on sqlplus program\n");
+            PERROR("waitpid(sqlplus_pid, &status, 0)");
+            fflush(stderr);
+        } else if(WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+            fprintf(stderr, "Failed to execute sqlplus program (it returned %d)\n", WEXITSTATUS(status));
+            fflush(stderr);
+            exit(WEXITSTATUS(status));
+        }
         return 0; 
     } else {
         // child

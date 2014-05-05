@@ -33,7 +33,6 @@
 
 #define PERROR(s)  fprintf(stderr, "Error at %s:%d:%s(): ", __FILE__, __LINE__, __FUNCTION__); perror(s);
 
-#define HOST_MAX             256
 #define BUF_MAX              4096
 #define LOGBUF_MAX           4096
 #define PW_MAX               512
@@ -43,14 +42,12 @@
 #define CONNECT_MAX          1024
 #define ORACLEHOME_MAX       2048
 #define SQLPLUS_MAX          4096
-#define PORT_MAX             128
-#define CONNECTDATA_MAX      4096
+#define CONNECTTEMPLATE_MAX  8192
+#define SQLPLUS_SESSION_LOG  "./sqlplus_session.log"
 
 bool debug;
-char connect_data[CONNECTDATA_MAX];
-char host[HOST_MAX];
+char connect_template[CONNECTTEMPLATE_MAX];
 char oraclehome[ORACLEHOME_MAX];
-char port[PORT_MAX];
 char pw_program[PW_PROGRAM_MAX];
 char username_program[USERNAME_PROGRAM_MAX];
 

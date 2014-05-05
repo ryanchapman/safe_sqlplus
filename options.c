@@ -36,28 +36,28 @@
 #include "safe_sqlplus.h"
 
 static struct option long_options[]={
-      {"connectdata"    , required_argument, NULL, 'c'},
+      {"connectstring"  , required_argument, NULL, 'c'},
       {"debug"          , no_argument      , NULL, 'd'},
       {"help"           , no_argument      , NULL, 'h'},
-      {"host"           , required_argument, NULL, 'H'},
       {"oraclehome"     , required_argument, NULL, 'o'},
       {"passwordprogram", required_argument, NULL, 'p'},
-      {"port"           , required_argument, NULL, 'P'},
       {"usernameprogram", required_argument, NULL, 'u'},
       {NULL             , 0,                 NULL,  0 }
 };
 
 void usage(char *argv0) {
-    printf("usage: %s -H hostname -P port -o oraclehome -c connectdata -u usernameprogram -p pwprogram\n", argv0);
+    printf("usage: %s -H hostname -P port -o oraclehome -c connectstring -u usernameprogram -p pwprogram\n", argv0);
     printf("Mandatory:\n");
-    printf(" -c,--connectdata       Connect data, passed to connect command for login in sqlplus\n");
-    printf("                        examples: -c SERVICE_NAME=pluggable1\n");
-    printf("                                  -c SID=oraclehost1\n");
-    printf(" -H,--host              Oracle database host to connect to\n");
+    printf(" -c,--connectstring     Connect string, passed to connect command for login in sqlplus\n");
+    printf("                        Two variables are available: {{username}} and {{password}}, which\n");
+    printf("                        will be replaced with the result of running usernameprogram (-u) and passwordprogram (-p)\n");
+    printf("                        examples: -c '{{username}}/\"{{password}}\"@\"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))\"'\n");
+    printf("                                  -c '{{username}}/\"{{password}}\"@\"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))\" AS SYSDBA'\n");
+    printf("                                  -c '{{username}}/\"{{password}}\"@\"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pluggable1)))\"'\n");
     printf(" -o,--oraclehome        Path to Oracle home (same as ORACLE_HOME environment variable)\n");
     printf("                        This program will execute ORACLE_HOME/bin/sqlplus\n");
-    printf(" -p,--passwordprogram   Path and arguments to program that will return Oracle database password\n");
     printf(" -u,--usernameprogram   Path and arguments to program that will return Oracle database username\n");
+    printf(" -p,--passwordprogram   Path and arguments to program that will return Oracle database password\n");
     printf("                        NOTE: username and password programs are passed to execv(), so\n");
     printf("                              things like pipes, single and double quotes as not supported.\n");
     printf("                              Just provide a single script or program that will return the uname/password\n");
@@ -66,7 +66,6 @@ void usage(char *argv0) {
     printf("Optional:\n");
     printf(" -d,--debug             Print debug messages\n");
     printf(" -h,--help              This help message\n");
-    printf(" -P,--port              Oracle database host port to connect to (default=1521)\n");
     printf("Report bugs to <ryan@rchapman.org>\n");
 }
 
@@ -77,15 +76,15 @@ void parse_args(int argc, char *argv[]) {
     
     debug=false;
 
-    while((c=getopt_long(argc, argv, "c:dhH:o:p:P:u:", long_options, &option_index)) != -1) {
+    while((c=getopt_long(argc, argv, "c:dho:p:u:", long_options, &option_index)) != -1) {
         switch(c) {
             case 0: // flag. do nothing.
                 break;
             case 'c':
                 if(optarg == NULL)
-                    connect_data[0]='\0';
+                    connect_template[0]='\0';
                 else
-                    strncpy(connect_data, optarg, sizeof(connect_data));
+                    strncpy(connect_template, optarg, sizeof(connect_template));
                 break;
             case 'd':
                 debug=true;
@@ -93,12 +92,6 @@ void parse_args(int argc, char *argv[]) {
             case 'h':
                 usage(argv[0]);
                 exit(1);
-                break;
-            case 'H':
-                if(optarg == NULL)
-                    host[0]='\0';
-                else
-                    strncpy(host, optarg, sizeof(host));
                 break;
             case 'o':
                 if(optarg == NULL)
@@ -112,12 +105,6 @@ void parse_args(int argc, char *argv[]) {
                 else
                     strncpy(pw_program, optarg, sizeof(pw_program));
                 break;
-            case 'P':
-                if(optarg == NULL)
-                    port[0]='\0';
-                else
-                    strncpy(port, optarg, sizeof(port));
-                break;
             case 'u':
                 if(optarg == NULL)
                     username_program[0]='\0';
@@ -130,23 +117,14 @@ void parse_args(int argc, char *argv[]) {
         }
     }
 
-    if(*connect_data == '\0') {
-        fprintf(stderr, "Usage error: You must specify CONNECT_DATA\n");
-        show_usage_and_exit=true;
-    }
-
-    if(*host == '\0') {
-        fprintf(stderr, "Usage error: You must specify an Oracle database host to connect to (-H)\n");
+    if(*connect_template == '\0') {
+        fprintf(stderr, "Usage error: You must specify connect string (-c)\n");
         show_usage_and_exit=true;
     }
 
     if(*oraclehome == '\0') {
         fprintf(stderr, "Usage error: You must specify Oracle home (-o)\n");
         show_usage_and_exit=true;
-    }
-
-    if(*port == '\0') {
-        strncpy(port, "1521", sizeof(port));
     }
 
     if(*pw_program == '\0') {
