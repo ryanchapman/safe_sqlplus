@@ -22,7 +22,7 @@ credentials on the command line, like so:
 
     su - oracle -c '$ORACLE_HOME/bin/sqlplus system/"psx0/6VlZ"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))'
 
-Unfortunately, this is not secure, as users on the system can run "ps auxwwe" and view the 
+Unfortunately, this is not secure, as users on the system can run "ps aux" and view the 
 username and password in clear text:
 
     ryan@oradb01:~$ ps aux | grep sqlplus
@@ -32,7 +32,8 @@ username and password in clear text:
 Instead, safe_sqlplus executes commands to find the Oracle database username and password.
 For example, given the invocation:
 
-    su - oracle -c '/usr/local/bin/safe_sqlplus -H oradb01.initech.com -P 1521 -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o $ORACLE_HOME -c SID=oradb01'
+    su - oracle -c '/usr/local/bin/safe_sqlplus -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o $ORACLE_HOME -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))"'
+
 
 safe_sqlplus will set up a pipe(2) and then fork and execute /usr/local/bin/get_ora_username to determine the username.  get_ora_username might look like:
 
@@ -75,38 +76,46 @@ and then copies standard input from the safe_sqlplus process to the standard inp
     
 ### Usage
 
-    $ ./safe_sqlplus -h
-    usage: ./safe_sqlplus -H hostname -P port -o oraclehome -c connectdata -u usernameprogram -p pwprogram
+    usage: ./safe_sqlplus -c connectstring -o oraclehome -u usernameprogram -p pwprogram
     Mandatory:
-     -c,--connectdata       Connect data, passed to connect command for login in sqlplus
-                            examples: -c SERVICE_NAME=pluggable1
-                                      -c SID=oraclehost1
-     -H,--host              Oracle database host to connect to
+     -c,--connectstring     Connect string, passed to connect command for login in sqlplus
+                            Two variables are available: {{username}} and {{password}}, which
+                            will be replaced with the result of running
+                            usernameprogram (-u) and passwordprogram (-p)
+    examples:
+     -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))"'
+     -c 'sys/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))" AS SYSDBA'
+     -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pluggable1)))"'
+
      -o,--oraclehome        Path to Oracle home (same as ORACLE_HOME environment variable)
                             This program will execute ORACLE_HOME/bin/sqlplus
-     -p,--passwordprogram   Path and arguments to program that will return Oracle database password
      -u,--usernameprogram   Path and arguments to program that will return Oracle database username
+     -p,--passwordprogram   Path and arguments to program that will return Oracle database password
                             NOTE: username and password programs are passed to execv(), so
-                                  things like pipes, single and double quotes as not supported.
-                                  Just provide a single script or program that will return the uname/password
-                                  example: -p /usr/local/bin/get_oracle_password
-                                  /usr/local/bin/get_oracle_password should only print the password on stdout
+                                  things like pipes as well as single and double quotes
+                                  are not supported.
+                                  Just provide a single script or program that will return
+                                  the uname/password
+    examples:
+     -u /usr/local/bin/get_oracle_username
+     -p /usr/local/bin/get_oracle_password
+
     Optional:
      -d,--debug             Print debug messages
      -h,--help              This help message
-     -P,--port              Oracle database host port to connect to (default=1521)
+    Report bugs to <ryan@rchapman.org>
 
 
 ### Examples
 
 Connect to container
 
-    safe_sqlplus -H oradb01.initech.com -P 1521 -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o /apps/oracle/12c -c SID=oradb01
+    safe_sqlplus -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o /apps/oracle/12c -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))"'
 
 
 Connect to pluggable database
 
-    safe_sqlplus -H oradb01.initech.com -P 1521 -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o /apps/oracle/12c -c SERVICE_NAME=pluggable1.initech.com
+    safe_sqlplus -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o /apps/oracle/12c -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pluggable1.initech.com)))"'
 
 
 -Ryan A. Chapman

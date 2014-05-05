@@ -46,23 +46,28 @@ static struct option long_options[]={
 };
 
 void usage(char *argv0) {
-    printf("usage: %s -H hostname -P port -o oraclehome -c connectstring -u usernameprogram -p pwprogram\n", argv0);
+    printf("usage: %s -c connectstring -o oraclehome -u usernameprogram -p pwprogram\n", argv0);
     printf("Mandatory:\n");
     printf(" -c,--connectstring     Connect string, passed to connect command for login in sqlplus\n");
     printf("                        Two variables are available: {{username}} and {{password}}, which\n");
-    printf("                        will be replaced with the result of running usernameprogram (-u) and passwordprogram (-p)\n");
-    printf("                        examples: -c '{{username}}/\"{{password}}\"@\"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))\"'\n");
-    printf("                                  -c '{{username}}/\"{{password}}\"@\"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))\" AS SYSDBA'\n");
-    printf("                                  -c '{{username}}/\"{{password}}\"@\"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pluggable1)))\"'\n");
+    printf("                        will be replaced with the result of running\n");
+    printf("                        usernameprogram (-u) and passwordprogram (-p)\n");
+    printf(" examples:\n");
+    printf(" -c '{{username}}/\"{{password}}\"@\"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))\"'\n");
+    printf(" -c 'sys/\"{{password}}\"@\"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))\" AS SYSDBA'\n");
+    printf(" -c '{{username}}/\"{{password}}\"@\"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pluggable1)))\"'\n");
     printf(" -o,--oraclehome        Path to Oracle home (same as ORACLE_HOME environment variable)\n");
     printf("                        This program will execute ORACLE_HOME/bin/sqlplus\n");
     printf(" -u,--usernameprogram   Path and arguments to program that will return Oracle database username\n");
     printf(" -p,--passwordprogram   Path and arguments to program that will return Oracle database password\n");
     printf("                        NOTE: username and password programs are passed to execv(), so\n");
-    printf("                              things like pipes, single and double quotes as not supported.\n");
-    printf("                              Just provide a single script or program that will return the uname/password\n");
-    printf("                              example: -p /usr/local/bin/get_oracle_password\n");
-    printf("                              /usr/local/bin/get_oracle_password should only print the password on stdout\n");
+    printf("                              things like pipes as well as single and double quotes\n");
+    printf("                              are not supported.\n");
+    printf("                              Just provide a single script or program that will return\n");
+    printf("                              the uname/password\n");
+    printf(" examples:\n");
+    printf(" -u /usr/local/bin/get_oracle_username\n");
+    printf("\n");
     printf("Optional:\n");
     printf(" -d,--debug             Print debug messages\n");
     printf(" -h,--help              This help message\n");
