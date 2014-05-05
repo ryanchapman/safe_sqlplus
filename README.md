@@ -85,7 +85,7 @@ and then copies standard input from the safe_sqlplus process to the standard inp
     examples:
      -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))"'
      -c 'sys/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))" AS SYSDBA'
-     -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pluggable1)))"'
+     -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pluggable1.initech.com)))"'
 
      -o,--oraclehome        Path to Oracle home (same as ORACLE_HOME environment variable)
                             This program will execute ORACLE_HOME/bin/sqlplus
