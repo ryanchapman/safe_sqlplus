@@ -259,7 +259,9 @@ char *make_connect_str(char *template, char *username, char *password) {
     // guess how much room we'll need
     capacity=(strlen(template)+strlen(username)+strlen(password))*sizeof(char);
     if((cs=malloc(capacity)) == NULL) {
-        perror("malloc()");
+        print_stacktrace();
+        fprintf(stderr, "Could not allocate memory for connect string\n");
+        PERROR("malloc()");
     }
     memset(cs, 0, capacity);
     pt=template;
@@ -338,7 +340,9 @@ int main(int argc, char *argv[]) {
        signal(SIGSEGV, sighandle_sigsegv) == SIG_ERR ||
        signal(SIGFPE , sighandle_sigfpe ) == SIG_ERR ||
        signal(SIGILL , sighandle_sigill ) == SIG_ERR) {
-        perror("could not set up signal handler");
+        print_stacktrace();
+        fprintf(stderr, "Could not set up signal handlers\n");
+        PERROR("signal()");
         exit(1);
     }
 
@@ -400,7 +404,7 @@ int main(int argc, char *argv[]) {
         }
         if(execv(username_args[0], username_args) == -1) {
             snprintf(logbuf, sizeof(logbuf), "Unable to execute username program \"%s\"", username_args[0]);
-            perror(logbuf);
+            PERROR(logbuf);
             exit(1);
         }
         return 0;
@@ -453,7 +457,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Exec password program: \"%s\"\n", pw_args[0]);
         if(execv(pw_args[0], pw_args) == -1) {
             snprintf(logbuf, sizeof(logbuf), "Unable to execute \"%s\"", pw_args[0]);
-            perror(logbuf);
+            PERROR(logbuf);
             exit(1);
         }
         return 0;
@@ -461,7 +465,8 @@ int main(int argc, char *argv[]) {
 
     // fork/exec sqlplus, but inject the connect command before copying our stdin over to sqlplus's stdin
     if(pipe(fds) == -1) {
-        perror("pipe()");
+        print_stacktrace();
+        PERROR("pipe()");
         return 1;
     }
     snprintf(sqlplus_program, sizeof(sqlplus_program), "%s/bin/sqlplus /NOLOG", oraclehome);
@@ -472,7 +477,8 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     if((sqlplus_pid=fork()) < 0) {
-        perror("fork()");
+        print_stacktrace();
+        PERROR("fork()");
         return 1;
     }
     if(sqlplus_pid > 0) {
@@ -528,7 +534,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Exec: %s\n", sqlplus_program);
         if(execv(sqlplus_args[0], sqlplus_args) == -1) {
             snprintf(logbuf, sizeof(logbuf), "Unable to execute \"%s\"", sqlplus_args[0]);
-            perror(logbuf);
+            PERROR(logbuf);
             return 1;
         }
         // if we get here then exec failed. inform parent
