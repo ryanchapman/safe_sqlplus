@@ -117,6 +117,10 @@ Connect to pluggable database
 
     safe_sqlplus -u /usr/local/bin/get_ora_username -p /usr/local/bin/get_ora_pw -o /apps/oracle/12c -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pluggable1.initech.com)))"'
 
+## License
+
+BSD 2-Clause
+
 
 -Ryan A. Chapman
  Sat May  3 22:46:30 MDT 2014
