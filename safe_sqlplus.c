@@ -507,6 +507,12 @@ int main(int argc, char *argv[]) {
         write(fileno(stdout), connect_end, strlen(connect_end));
         write(fileno(stdout), define_on, strlen(define_on));
         fflush(stdout);
+        // zero username/password/connect string to prevent someone from reading them from memory
+        memset(ora_username, 0, sizeof(ora_username));
+        memset(ora_pw, 0, sizeof(ora_username));
+        char *pcs;
+        for(pcs=connect_str; *pcs != '\0'; pcs++)
+            *pcs = '\0';
         // copy stdin to the write side of pipe (this read(2) will block)
         while((count=read(fileno(stdin), buf, BUF_MAX)) > 0) {
             write(fileno(stdout), buf, count);
