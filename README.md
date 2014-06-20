@@ -44,7 +44,7 @@ safe_sqlplus will set up a pipe(2) and then fork and execute /usr/local/bin/get_
 
 safe_sqlplus then forks and executes /usr/local/bin/get_ora_password to get the Oracle database password.
 
-It finally forks and executes $ORACLE_HOME/bin/sqlplus and prints this on the sqlplus processes standard input:
+It finally forks and executes $ORACLE_HOME/bin/sqlplus and prints this on the sqlplus process' standard input:
 
     set define off;
     connect system/"psx0/6VlZ"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))"
@@ -82,10 +82,10 @@ and then copies standard input from the safe_sqlplus process to the standard inp
                             Two variables are available: {{username}} and {{password}}, which
                             will be replaced with the result of running
                             usernameprogram (-u) and passwordprogram (-p)
-    examples:
-     -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))"'
-     -c 'sys/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))" AS SYSDBA'
-     -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pluggable1.initech.com)))"'
+        examples:
+        -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))"'
+        -c 'sys/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SID=oradb01)))" AS SYSDBA'
+        -c '{{username}}/"{{password}}"@"(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oradb01.initech.com)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=pluggable1.initech.com)))"'
 
      -o,--oraclehome        Path to Oracle home (same as ORACLE_HOME environment variable)
                             This program will execute ORACLE_HOME/bin/sqlplus
@@ -95,10 +95,10 @@ and then copies standard input from the safe_sqlplus process to the standard inp
                                   things like pipes as well as single and double quotes
                                   are not supported.
                                   Just provide a single script or program that will return
-                                  the uname/password
-    examples:
-     -u /usr/local/bin/get_oracle_username
-     -p /usr/local/bin/get_oracle_password
+                                  the username/password
+        examples:
+        -u /usr/local/bin/get_oracle_username
+        -p /usr/local/bin/get_oracle_password
 
     Optional:
      -d,--debug             Print debug messages
