@@ -43,6 +43,7 @@
 #define ORACLEHOME_MAX       2048
 #define SQLPLUS_MAX          4096
 #define CONNECTTEMPLATE_MAX  8192
+#define SQLPLUS_ARGS_MAX     8192
 #define SQLPLUS_SESSION_LOG  "./sqlplus_session.log"
 
 bool debug;
@@ -50,6 +51,7 @@ char connect_template[CONNECTTEMPLATE_MAX];
 char oraclehome[ORACLEHOME_MAX];
 char pw_program[PW_PROGRAM_MAX];
 char username_program[USERNAME_PROGRAM_MAX];
+char sqlplusargs[SQLPLUS_ARGS_MAX];
 
 void usage(char *argv0);
 void parse_args(int argc, char *argv[]);

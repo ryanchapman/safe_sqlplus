@@ -41,6 +41,7 @@ static struct option long_options[]={
       {"help"           , no_argument      , NULL, 'h'},
       {"oraclehome"     , required_argument, NULL, 'o'},
       {"passwordprogram", required_argument, NULL, 'p'},
+      {"sqlplusargs"    , required_argument, NULL, 'a'},
       {"usernameprogram", required_argument, NULL, 'u'},
       {NULL             , 0,                 NULL,  0 }
 };
@@ -69,6 +70,7 @@ void usage(char *argv0) {
     printf(" -u /usr/local/bin/get_oracle_username\n");
     printf("\n");
     printf("Optional:\n");
+    printf(" -a,--sqlplusargs       Additional arguments to pass to the sqlplus program\n");
     printf(" -d,--debug             Print debug messages\n");
     printf(" -h,--help              This help message\n");
     printf("Report bugs to <ryan@rchapman.org>\n");
@@ -81,9 +83,15 @@ void parse_args(int argc, char *argv[]) {
     
     debug=false;
 
-    while((c=getopt_long(argc, argv, "c:dho:p:u:", long_options, &option_index)) != -1) {
+    while((c=getopt_long(argc, argv, "a:c:dho:p:u:", long_options, &option_index)) != -1) {
         switch(c) {
             case 0: // flag. do nothing.
+                break;
+            case 'a':
+                if(optarg == NULL)
+                    sqlplusargs[0]='\0';
+                else
+                    strncpy(sqlplusargs, optarg, sizeof(sqlplusargs));
                 break;
             case 'c':
                 if(optarg == NULL)

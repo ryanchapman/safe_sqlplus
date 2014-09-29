@@ -469,7 +469,7 @@ int main(int argc, char *argv[]) {
         PERROR("pipe()");
         return 1;
     }
-    snprintf(sqlplus_program, sizeof(sqlplus_program), "%s/bin/sqlplus /NOLOG", oraclehome);
+    snprintf(sqlplus_program, sizeof(sqlplus_program), "%s/bin/sqlplus %s /NOLOG", oraclehome, sqlplusargs);
     if((sqlplus_args=make_args(sqlplus_program)) == NULL) {
         print_stacktrace();
         fprintf(stderr, "Could not make sqlplus program argument array\n");
